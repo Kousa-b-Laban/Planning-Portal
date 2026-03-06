@@ -4,14 +4,11 @@ const BASE_URL = 'https://epc.opendatacommunities.org/api/v1';
 
 function getAuthHeaders(): HeadersInit {
   const apiKey = process.env.EPC_API_KEY;
-  const email = process.env.EPC_API_EMAIL;
   if (!apiKey) {
     throw new Error('EPC_API_KEY is not set. Register free at https://epc.opendatacommunities.org');
   }
-  // EPC API uses Basic auth with email:apiKey
-  const credentials = email ? `${email}:${apiKey}` : `${apiKey}:`;
   return {
-    Authorization: `Basic ${Buffer.from(credentials).toString('base64')}`,
+    Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`,
     Accept: 'application/json',
   };
 }
