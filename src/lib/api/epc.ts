@@ -25,7 +25,12 @@ export async function searchAddressesByPostcode(
     }
   );
 
-  if (!res.ok) return [];
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('EPC API authentication failed — check your EPC_API_KEY');
+    }
+    throw new Error(`EPC API returned status ${res.status}`);
+  }
 
   const data = await res.json();
   if (!data.rows || data.rows.length === 0) return [];
