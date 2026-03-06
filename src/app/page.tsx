@@ -13,10 +13,12 @@ export default function HomePage() {
   const [addresses, setAddresses] = useState<AddressResult[]>([]);
   const [searchedPostcode, setSearchedPostcode] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
 
   async function handleSearch(postcode: string) {
     setIsLoading(true);
     setError(null);
+    setWarning(null);
     setAddresses([]);
     setHasSearched(false);
 
@@ -34,6 +36,7 @@ export default function HomePage() {
       setAddresses(data.addresses);
       setSearchedPostcode((data.postcode as PostcodeLookup).postcode);
       setHasSearched(true);
+      if (data.warning) setWarning(data.warning);
     } catch {
       setError('Network error — please try again');
     } finally {
@@ -72,7 +75,13 @@ export default function HomePage() {
           </div>
         )}
 
-        {hasSearched && addresses.length === 0 && !error && (
+        {warning && (
+          <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+            {warning}
+          </div>
+        )}
+
+        {hasSearched && addresses.length === 0 && !error && !warning && (
           <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
             No addresses found for {searchedPostcode}. The postcode may not have any EPC records.
           </div>
