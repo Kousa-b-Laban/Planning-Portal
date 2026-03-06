@@ -41,7 +41,10 @@ export function ChatPanel({ property }: ChatPanelProps) {
       });
 
       if (!res.ok) {
-        throw new Error('Chat request failed');
+        if (res.status === 429) {
+          throw new Error('You\'re sending messages too quickly. Please wait a moment and try again.');
+        }
+        throw new Error('Chat request failed. Please try again.');
       }
 
       const reader = res.body?.getReader();
@@ -85,12 +88,12 @@ export function ChatPanel({ property }: ChatPanelProps) {
         }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.';
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content:
-            'Sorry, I encountered an error. Please try again. If the problem persists, check that the API key is configured.',
+          content: errorMessage,
         },
       ]);
     } finally {

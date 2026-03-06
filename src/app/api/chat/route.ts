@@ -2,11 +2,32 @@ import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt } from '@/lib/chat/system-prompt';
 import { PropertyProfile } from '@/types/property';
+import { rateLimit } from '@/lib/utils/rate-limit';
 
 const anthropic = new Anthropic();
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit by IP — 10 messages per minute
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
+    const { allowed, remaining, resetAt } = rateLimit(ip);
+
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please wait a moment before sending another message.' }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { messages, property } = body as {
       messages: Array<{ role: 'user' | 'assistant'; content: string }>;
