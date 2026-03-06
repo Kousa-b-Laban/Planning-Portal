@@ -18,12 +18,15 @@ export default function PropertyPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const uprn = searchParams.get('uprn');
   const lmkKey = searchParams.get('lmkKey');
   const postcode = searchParams.get('postcode');
   const address = searchParams.get('address');
+  const lat = searchParams.get('lat');
+  const lng = searchParams.get('lng');
 
   useEffect(() => {
-    if (!lmkKey || !postcode) {
+    if ((!uprn && !lmkKey) || !postcode) {
       setError('Missing property identifier');
       setIsLoading(false);
       return;
@@ -32,9 +35,12 @@ export default function PropertyPage() {
     async function fetchProperty() {
       try {
         const params = new URLSearchParams({
-          lmkKey: lmkKey!,
           postcode: postcode!,
+          ...(uprn ? { uprn } : {}),
+          ...(lmkKey ? { lmkKey } : {}),
           ...(address ? { address } : {}),
+          ...(lat ? { lat } : {}),
+          ...(lng ? { lng } : {}),
         });
         const res = await fetch(`/api/property?${params}`);
         if (!res.ok) {
@@ -51,7 +57,7 @@ export default function PropertyPage() {
     }
 
     fetchProperty();
-  }, [lmkKey, postcode, address]);
+  }, [uprn, lmkKey, postcode, address, lat, lng]);
 
   if (error) {
     return (

@@ -15,11 +15,14 @@ export interface PostcodeLookup {
 }
 
 export interface AddressResult {
-  lmkKey: string; // EPC unique identifier
+  uprn: string; // OS Places unique property reference number
+  lmkKey?: string; // EPC unique identifier (only if EPC exists)
   address: string;
   postcode: string;
   propertyType: string;
   builtForm: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface EPCData {
@@ -117,6 +120,7 @@ export interface PropertyProfile {
   latitude: number;
   longitude: number;
   localAuthority: string;
+  uprn?: string; // OS Places unique property reference number
   epc: EPCData | null;
   transactions: TransactionRecord[];
   floodRisk: FloodRiskData | null;

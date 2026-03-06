@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lookupPostcode } from '@/lib/api/postcodes';
-import { searchAddressesByPostcode } from '@/lib/api/epc';
+import { searchAddressesByPostcodeOS } from '@/lib/api/os-places';
+import { searchAddressesByPostcode as searchAddressesByPostcodeEPC } from '@/lib/api/epc';
 
 export async function GET(request: NextRequest) {
   const postcode = request.nextUrl.searchParams.get('postcode');
@@ -30,21 +31,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Search EPC register for addresses at this postcode
-    let addresses: Awaited<ReturnType<typeof searchAddressesByPostcode>> = [];
+    let addresses: Awaited<ReturnType<typeof searchAddressesByPostcodeOS>> = [];
     let warning: string | undefined;
+    let source: 'os-places' | 'epc' = 'os-places';
 
+    // Primary: OS Places API (covers all addressable properties)
     try {
-      addresses = await searchAddressesByPostcode(postcode);
-    } catch (epcError) {
-      const msg = epcError instanceof Error ? epcError.message : 'EPC lookup failed';
-      console.error('EPC API error:', msg);
-      warning = msg;
+      addresses = await searchAddressesByPostcodeOS(postcode);
+    } catch (osError) {
+      const msg = osError instanceof Error ? osError.message : 'OS Places lookup failed';
+      console.error('OS Places API error:', msg);
+
+      // Fallback: EPC register (only properties with EPC certificates)
+      try {
+        addresses = await searchAddressesByPostcodeEPC(postcode);
+        source = 'epc';
+        warning = 'Using EPC register as fallback — some properties without EPC certificates may not appear.';
+      } catch (epcError) {
+        const epcMsg = epcError instanceof Error ? epcError.message : 'EPC lookup also failed';
+        console.error('EPC API fallback error:', epcMsg);
+        warning = `Address lookup unavailable: ${msg}`;
+      }
     }
 
     return NextResponse.json({
       postcode: postcodeData,
       addresses,
+      source,
       warning,
     });
   } catch (error) {

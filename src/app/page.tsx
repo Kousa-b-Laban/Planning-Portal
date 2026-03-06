@@ -45,12 +45,16 @@ export default function HomePage() {
   }
 
   function handleSelect(address: AddressResult) {
+    const id = address.uprn || address.lmkKey || address.address;
     const params = new URLSearchParams({
-      lmkKey: address.lmkKey,
       postcode: address.postcode,
       address: address.address,
+      ...(address.uprn ? { uprn: address.uprn } : {}),
+      ...(address.lmkKey ? { lmkKey: address.lmkKey } : {}),
+      ...(address.latitude ? { lat: String(address.latitude) } : {}),
+      ...(address.longitude ? { lng: String(address.longitude) } : {}),
     });
-    router.push(`/property/${encodeURIComponent(address.lmkKey)}?${params}`);
+    router.push(`/property/${encodeURIComponent(id)}?${params}`);
   }
 
   return (
@@ -83,7 +87,7 @@ export default function HomePage() {
 
         {hasSearched && addresses.length === 0 && !error && !warning && (
           <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
-            No addresses found for {searchedPostcode}. The postcode may not have any EPC records.
+            No addresses found for {searchedPostcode}.
           </div>
         )}
 

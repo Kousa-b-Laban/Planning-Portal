@@ -52,6 +52,7 @@ export async function searchAddressesByPostcode(
     const address = row.address || '';
     if (!byAddress.has(address)) {
       byAddress.set(address, {
+        uprn: '', // EPC API doesn't provide UPRN
         lmkKey: row['lmk-key'],
         address,
         postcode: row.postcode,
@@ -64,6 +65,62 @@ export async function searchAddressesByPostcode(
   return Array.from(byAddress.values()).sort((a, b) =>
     a.address.localeCompare(b.address)
   );
+}
+
+/**
+ * Search EPC by postcode and find the best match for a given address string.
+ * Returns the EPC data for the closest address match, or null if no match found.
+ */
+export async function getEPCByAddress(
+  postcode: string,
+  address: string
+): Promise<EPCData | null> {
+  const encoded = encodeURIComponent(postcode.trim());
+  const res = await fetch(
+    `${BASE_URL}/domestic/search?postcode=${encoded}&size=100`,
+    {
+      headers: getAuthHeaders(),
+      next: { revalidate: 60 * 60 * 24 },
+    }
+  );
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  if (!data.rows || data.rows.length === 0) return null;
+
+  // Normalize for comparison: lowercase, strip punctuation/extra spaces
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const target = normalize(address);
+
+  // Find the best match — exact substring match first, then best overlap
+  let bestRow = null;
+  let bestScore = 0;
+
+  for (const row of data.rows) {
+    const rowAddr = normalize(row.address || '');
+    if (rowAddr === target) {
+      bestRow = row;
+      break;
+    }
+    // Check if key parts of the address overlap
+    const targetWords = target.split(' ');
+    const matchCount = targetWords.filter((w) => rowAddr.includes(w)).length;
+    const score = matchCount / targetWords.length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestRow = row;
+    }
+  }
+
+  // Require at least 60% word overlap to consider it a match
+  if (!bestRow || (bestScore < 0.6 && normalize(bestRow.address || '') !== target)) {
+    return null;
+  }
+
+  return getEPCByLmkKey(bestRow['lmk-key']);
 }
 
 export async function getEPCByLmkKey(lmkKey: string): Promise<EPCData | null> {

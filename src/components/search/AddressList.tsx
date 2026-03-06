@@ -14,7 +14,7 @@ export function AddressList({ addresses, postcode, onSelect }: AddressListProps)
     return (
       <div className="mt-4 rounded-lg border border-gray-200 bg-white p-6 text-center">
         <p className="text-sm text-gray-500">
-          No addresses found for {postcode}. This may mean no EPC certificates exist for properties at this postcode.
+          No addresses found for {postcode}.
         </p>
       </div>
     );
@@ -27,7 +27,7 @@ export function AddressList({ addresses, postcode, onSelect }: AddressListProps)
       </p>
       <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-sm">
         {addresses.map((addr) => (
-          <li key={addr.lmkKey}>
+          <li key={addr.uprn || addr.lmkKey || addr.address}>
             <button
               onClick={() => onSelect(addr)}
               className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
