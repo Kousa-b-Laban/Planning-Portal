@@ -12,28 +12,37 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Validate postcode and get coordinates
-  const postcodeData = await lookupPostcode(postcode);
-  if (!postcodeData) {
+  try {
+    // Validate postcode and get coordinates
+    const postcodeData = await lookupPostcode(postcode);
+    if (!postcodeData) {
+      return NextResponse.json(
+        { error: 'Invalid postcode or postcode not found' },
+        { status: 404 }
+      );
+    }
+
+    // Only support England for MVP
+    if (postcodeData.country !== 'England') {
+      return NextResponse.json(
+        { error: 'This service currently only covers England. Scotland, Wales, and Northern Ireland are not yet supported.' },
+        { status: 400 }
+      );
+    }
+
+    // Search EPC register for addresses at this postcode
+    const addresses = await searchAddressesByPostcode(postcode);
+
+    return NextResponse.json({
+      postcode: postcodeData,
+      addresses,
+    });
+  } catch (error) {
+    console.error('Search API error:', error);
+    const message = error instanceof Error ? error.message : 'Search failed';
     return NextResponse.json(
-      { error: 'Invalid postcode or postcode not found' },
-      { status: 404 }
+      { error: message },
+      { status: 500 }
     );
   }
-
-  // Only support England for MVP
-  if (postcodeData.country !== 'England') {
-    return NextResponse.json(
-      { error: 'This service currently only covers England. Scotland, Wales, and Northern Ireland are not yet supported.' },
-      { status: 400 }
-    );
-  }
-
-  // Search EPC register for addresses at this postcode
-  const addresses = await searchAddressesByPostcode(postcode);
-
-  return NextResponse.json({
-    postcode: postcodeData,
-    addresses,
-  });
 }
