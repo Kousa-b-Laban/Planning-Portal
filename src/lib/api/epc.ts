@@ -3,12 +3,23 @@ import { AddressResult, EPCData } from '@/types/property';
 const BASE_URL = 'https://epc.opendatacommunities.org/api/v1';
 
 function getAuthHeaders(): HeadersInit {
+  // EPC API uses HTTP Basic Auth with base64(email:apiKey)
+  // Option 1: Set EPC_API_TOKEN to the pre-encoded base64 token from the EPC dashboard
+  // Option 2: Set EPC_EMAIL and EPC_API_KEY separately
+  const token = process.env.EPC_API_TOKEN;
+  if (token) {
+    return { Authorization: `Basic ${token}`, Accept: 'application/json' };
+  }
+
+  const email = process.env.EPC_EMAIL;
   const apiKey = process.env.EPC_API_KEY;
-  if (!apiKey) {
-    throw new Error('EPC_API_KEY environment variable is not set');
+  if (!email || !apiKey) {
+    throw new Error(
+      'EPC auth not configured. Set EPC_API_TOKEN (base64 token) or both EPC_EMAIL and EPC_API_KEY. Register free at https://epc.opendatacommunities.org'
+    );
   }
   return {
-    Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`,
+    Authorization: `Basic ${Buffer.from(`${email}:${apiKey}`).toString('base64')}`,
     Accept: 'application/json',
   };
 }
@@ -25,7 +36,12 @@ export async function searchAddressesByPostcode(
     }
   );
 
-  if (!res.ok) return [];
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('EPC API authentication failed — check your EPC_EMAIL + EPC_API_KEY or EPC_API_TOKEN');
+    }
+    throw new Error(`EPC API returned status ${res.status}`);
+  }
 
   const data = await res.json();
   if (!data.rows || data.rows.length === 0) return [];

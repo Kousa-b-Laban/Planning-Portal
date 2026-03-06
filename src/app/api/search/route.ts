@@ -31,11 +31,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Search EPC register for addresses at this postcode
-    const addresses = await searchAddressesByPostcode(postcode);
+    let addresses: Awaited<ReturnType<typeof searchAddressesByPostcode>> = [];
+    let warning: string | undefined;
+
+    try {
+      addresses = await searchAddressesByPostcode(postcode);
+    } catch (epcError) {
+      const msg = epcError instanceof Error ? epcError.message : 'EPC lookup failed';
+      console.error('EPC API error:', msg);
+      warning = msg;
+    }
 
     return NextResponse.json({
       postcode: postcodeData,
       addresses,
+      warning,
     });
   } catch (error) {
     console.error('Search API error:', error);
