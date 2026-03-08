@@ -51,10 +51,11 @@ export async function searchAddressesByPostcodeOS(
   const key = getApiKey();
   const encoded = encodeURIComponent(postcode.trim());
   const byUprn = new Map<string, AddressResult>();
-  let offset = 0;
   const pageSize = 100;
+  let offset = 0;
 
-  // Paginate through all results (API caps at 100 per request)
+  // Paginate through all results — OS Places caps at 100 per request,
+  // but London postcodes can have 200+ addresses (e.g. blocks of flats)
   while (true) {
     const res = await fetch(
       `${BASE_URL}/postcode?postcode=${encoded}&key=${key}&dataset=DPA&maxresults=${pageSize}&offset=${offset}`,
