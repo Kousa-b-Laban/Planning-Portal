@@ -114,6 +114,31 @@ export interface NearbyPlanningApp {
   authority: string;
 }
 
+export interface NearestStation {
+  name: string;
+  distance: number; // metres
+  lines: string[]; // e.g. ['Victoria', 'District']
+  modes: string[]; // e.g. ['tube', 'bus']
+}
+
+export interface TransportData {
+  nearestStations: NearestStation[];
+}
+
+export interface CrimeSummary {
+  totalCrimes: number;
+  period: string; // e.g. '2025-12'
+  categories: { category: string; count: number }[];
+}
+
+export interface BroadbandData {
+  averageDownload: number | null; // Mbps
+  averageUpload: number | null;
+  superfast: number | null; // % of premises with ≥30 Mbps
+  ultrafast: number | null; // % of premises with ≥300 Mbps
+  source: string;
+}
+
 export interface PropertyProfile {
   address: string;
   postcode: string;
@@ -127,6 +152,9 @@ export interface PropertyProfile {
   planningConstraints: PlanningConstraints | null;
   nearbyPlanningApps: NearbyPlanningApp[];
   magicDesignations: MagicDesignations | null;
+  transport: TransportData | null;
+  crime: CrimeSummary | null;
+  broadband: BroadbandData | null;
 }
 
 export interface MagicDesignations {

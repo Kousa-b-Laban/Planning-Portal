@@ -5,6 +5,10 @@ import { getTransactionHistory } from '@/lib/api/land-registry';
 import { getFloodRisk } from '@/lib/api/flood';
 import { getPlanningConstraints, getNearbyPlanningApps } from '@/lib/api/planning';
 import { getMagicDesignations } from '@/lib/api/magic';
+import { getNearestStations } from '@/lib/api/tfl';
+import { getCrimeSummary } from '@/lib/api/police';
+import { getBroadbandData } from '@/lib/api/broadband';
+import { getLondonPlanningApps } from '@/lib/api/london-planning';
 import { PropertyProfile } from '@/types/property';
 
 export async function GET(request: NextRequest) {
@@ -55,7 +59,7 @@ export async function GET(request: NextRequest) {
       ? getEPCByAddress(postcode, address).catch(() => null)
       : Promise.resolve(null);
 
-  const [epc, transactions, floodRisk, planningConstraints, nearbyPlanningApps, magicDesignations] =
+  const [epc, transactions, floodRisk, planningConstraints, nearbyPlanningApps, magicDesignations, transport, crime, broadband, londonApps] =
     await Promise.all([
       epcPromise,
       getTransactionHistory(postcode, address || '').catch(() => []),
@@ -63,7 +67,20 @@ export async function GET(request: NextRequest) {
       getPlanningConstraints(latitude, longitude).catch(() => null),
       getNearbyPlanningApps(latitude, longitude).catch(() => []),
       getMagicDesignations(latitude, longitude).catch(() => null),
+      getNearestStations(latitude, longitude).catch(() => null),
+      getCrimeSummary(latitude, longitude).catch(() => null),
+      getBroadbandData(postcode).catch(() => null),
+      getLondonPlanningApps(latitude, longitude).catch(() => []),
     ]);
+
+  // Merge London Datahub results with PlanIt results, dedup by reference
+  const allPlanningApps = [...nearbyPlanningApps];
+  const existingRefs = new Set(allPlanningApps.map((a) => a.reference));
+  for (const app of londonApps) {
+    if (!existingRefs.has(app.reference)) {
+      allPlanningApps.push(app);
+    }
+  }
 
   const profile: PropertyProfile = {
     address: address || epc?.address || 'Unknown address',
@@ -76,8 +93,11 @@ export async function GET(request: NextRequest) {
     transactions,
     floodRisk,
     planningConstraints,
-    nearbyPlanningApps,
+    nearbyPlanningApps: allPlanningApps,
     magicDesignations,
+    transport,
+    crime,
+    broadband,
   };
 
   return NextResponse.json(profile);
