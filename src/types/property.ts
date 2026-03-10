@@ -139,6 +139,20 @@ export interface BroadbandData {
   source: string;
 }
 
+export interface BoroughInfo {
+  name: string;
+  planningPortalUrl: string;
+  cilRateResidential: number;
+  mayoralCilRate: number;
+  conservationAreaCount: number;
+  article4Count: number;
+  planningContact: {
+    phone?: string;
+    email?: string;
+    url: string;
+  };
+}
+
 export interface PropertyProfile {
   address: string;
   postcode: string;
@@ -155,6 +169,7 @@ export interface PropertyProfile {
   transport: TransportData | null;
   crime: CrimeSummary | null;
   broadband: BroadbandData | null;
+  borough: BoroughInfo | null;
 }
 
 export interface MagicDesignations {

@@ -57,10 +57,16 @@ export function propertyTypeLabel(type: string): string {
 }
 
 export function tenureLabel(tenure: string): string {
-  const labels: Record<string, string> = {
+  const codeLabels: Record<string, string> = {
     F: 'Freehold',
     L: 'Leasehold',
     U: 'Unknown',
   };
-  return labels[tenure] || tenure;
+  // Handle single-letter codes (from EPC) or full strings (from Land Registry)
+  if (codeLabels[tenure]) return codeLabels[tenure];
+  // If the API already returned a readable label like "Freehold", use it directly
+  const lower = tenure.toLowerCase();
+  if (lower.includes('freehold')) return 'Freehold';
+  if (lower.includes('leasehold')) return 'Leasehold';
+  return tenure;
 }

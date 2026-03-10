@@ -9,7 +9,8 @@ import { getNearestStations } from '@/lib/api/tfl';
 import { getCrimeSummary } from '@/lib/api/police';
 import { getBroadbandData } from '@/lib/api/broadband';
 import { getLondonPlanningApps } from '@/lib/api/london-planning';
-import { PropertyProfile } from '@/types/property';
+import { getBoroughConfig } from '@/lib/borough';
+import { PropertyProfile, BoroughInfo } from '@/types/property';
 
 export async function GET(request: NextRequest) {
   const uprn = request.nextUrl.searchParams.get('uprn');
@@ -82,6 +83,21 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Build borough-specific info if config exists for this local authority
+  let borough: BoroughInfo | null = null;
+  const boroughConfig = getBoroughConfig(admin_district);
+  if (boroughConfig) {
+    borough = {
+      name: boroughConfig.name,
+      planningPortalUrl: boroughConfig.planningPortalUrl,
+      cilRateResidential: boroughConfig.cilRateResidential,
+      mayoralCilRate: boroughConfig.mayoralCilRate,
+      conservationAreaCount: boroughConfig.conservationAreaCount,
+      article4Count: boroughConfig.article4Directions.length,
+      planningContact: boroughConfig.planningContact,
+    };
+  }
+
   const profile: PropertyProfile = {
     address: address || epc?.address || 'Unknown address',
     postcode,
@@ -98,6 +114,7 @@ export async function GET(request: NextRequest) {
     transport,
     crime,
     broadband,
+    borough,
   };
 
   return NextResponse.json(profile);
