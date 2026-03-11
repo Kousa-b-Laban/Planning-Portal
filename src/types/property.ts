@@ -153,6 +153,27 @@ export interface BoroughInfo {
   };
 }
 
+export interface BrownfieldSite {
+  name: string;
+  address: string;
+  hectares: number | null;
+  minDwellings: number | null; // Minimum net dwellings planned
+  planningStatus: string; // e.g. 'permissioned', 'not permissioned', 'pending decision'
+  lastUpdated: string;
+  distance: number; // metres from property
+  organisation: string;
+}
+
+export interface NearbySchool {
+  name: string;
+  phase: string; // Primary, Secondary, Sixth Form, All-through, Special, Nursery
+  type: string; // Academy, Free School, Community School, etc.
+  ofstedRating: string | null; // Outstanding, Good, Requires Improvement, Inadequate
+  ageRange: string | null; // e.g. '3-11', '11-18'
+  distance: number; // metres from property
+  urn: string; // Unique Reference Number
+}
+
 export interface PropertyProfile {
   address: string;
   postcode: string;
@@ -170,6 +191,8 @@ export interface PropertyProfile {
   crime: CrimeSummary | null;
   broadband: BroadbandData | null;
   borough: BoroughInfo | null;
+  brownfieldSites: BrownfieldSite[];
+  nearbySchools: NearbySchool[];
 }
 
 export interface MagicDesignations {

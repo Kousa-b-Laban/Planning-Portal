@@ -67,6 +67,27 @@ function buildPropertyContext(p: PropertyProfile): string {
     lines.push(`- Total recorded transactions: ${p.transactions.length}`);
   }
 
+  if (p.brownfieldSites && p.brownfieldSites.length > 0) {
+    lines.push(`\n### Nearby Brownfield Sites (within ~500m)`);
+    lines.push(`WARNING: ${p.brownfieldSites.length} brownfield site(s) registered nearby — future development is planned or possible.`);
+    for (const site of p.brownfieldSites.slice(0, 3)) {
+      const parts = [`${site.name} (${site.distance}m away)`];
+      if (site.minDwellings) parts.push(`${site.minDwellings}+ dwellings planned`);
+      if (site.planningStatus) parts.push(`status: ${site.planningStatus}`);
+      lines.push(`- ${parts.join(' — ')}`);
+    }
+  }
+
+  if (p.nearbySchools && p.nearbySchools.length > 0) {
+    lines.push(`\n### Nearby Schools`);
+    for (const school of p.nearbySchools.slice(0, 5)) {
+      const parts = [`${school.name} (${school.phase}, ${school.distance}m)`];
+      if (school.ofstedRating) parts.push(`Ofsted: ${school.ofstedRating}`);
+      if (school.ageRange) parts.push(`ages ${school.ageRange}`);
+      lines.push(`- ${parts.join(' — ')}`);
+    }
+  }
+
   return lines.join('\n');
 }
 

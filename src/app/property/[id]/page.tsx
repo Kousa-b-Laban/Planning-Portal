@@ -13,6 +13,8 @@ import { TransportCard } from '@/components/property/TransportCard';
 import { CrimeCard } from '@/components/property/CrimeCard';
 import { BroadbandCard } from '@/components/property/BroadbandCard';
 import { BoroughInfoCard } from '@/components/property/BoroughInfoCard';
+import { BrownfieldCard } from '@/components/property/BrownfieldCard';
+import { SchoolsCard } from '@/components/property/SchoolsCard';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 
@@ -123,6 +125,8 @@ export default function PropertyPage() {
         <CrimeCard crime={property.crime} />
         <BroadbandCard broadband={property.broadband} />
         <BoroughInfoCard borough={property.borough} />
+        <SchoolsCard schools={property.nearbySchools} />
+        <BrownfieldCard sites={property.brownfieldSites} />
         <div className="lg:col-span-2">
           <NearbyPlanning apps={property.nearbyPlanningApps} />
         </div>

@@ -9,6 +9,8 @@ import { getNearestStations } from '@/lib/api/tfl';
 import { getCrimeSummary } from '@/lib/api/police';
 import { getBroadbandData } from '@/lib/api/broadband';
 import { getLondonPlanningApps } from '@/lib/api/london-planning';
+import { getNearbyBrownfieldSites } from '@/lib/api/brownfield';
+import { getNearbySchools } from '@/lib/api/schools';
 import { getBoroughConfig } from '@/lib/borough';
 import { PropertyProfile, BoroughInfo } from '@/types/property';
 
@@ -60,7 +62,7 @@ export async function GET(request: NextRequest) {
       ? getEPCByAddress(postcode, address).catch(() => null)
       : Promise.resolve(null);
 
-  const [epc, transactions, floodRisk, planningConstraints, nearbyPlanningApps, magicDesignations, transport, crime, broadband, londonApps] =
+  const [epc, transactions, floodRisk, planningConstraints, nearbyPlanningApps, magicDesignations, transport, crime, broadband, londonApps, brownfieldSites, nearbySchools] =
     await Promise.all([
       epcPromise,
       getTransactionHistory(postcode, address || '').catch(() => []),
@@ -72,6 +74,8 @@ export async function GET(request: NextRequest) {
       getCrimeSummary(latitude, longitude).catch(() => null),
       getBroadbandData(postcode).catch(() => null),
       getLondonPlanningApps(latitude, longitude).catch(() => []),
+      getNearbyBrownfieldSites(latitude, longitude).catch(() => []),
+      getNearbySchools(latitude, longitude).catch(() => []),
     ]);
 
   // Merge London Datahub results with PlanIt results, dedup by reference
@@ -115,6 +119,8 @@ export async function GET(request: NextRequest) {
     crime,
     broadband,
     borough,
+    brownfieldSites,
+    nearbySchools,
   };
 
   return NextResponse.json(profile);

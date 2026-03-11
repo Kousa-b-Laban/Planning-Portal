@@ -35,7 +35,7 @@ export default function RootLayout({
         <footer className="border-t border-gray-200 bg-white mt-auto">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <p className="text-center text-xs text-gray-400">
-              Data from HM Land Registry, EPC Register, Environment Agency, planning.data.gov.uk, PlanIt, Natural England, TfL, Police.uk, Ofcom.
+              Data from HM Land Registry, EPC Register, Environment Agency, planning.data.gov.uk, PlanIt, Natural England, TfL, Police.uk, Ofcom, DfE.
               This is guidance only &mdash; always verify with your local planning authority.
             </p>
           </div>
