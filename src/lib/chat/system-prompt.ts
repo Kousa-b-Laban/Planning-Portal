@@ -1,10 +1,13 @@
 import { PropertyProfile } from '@/types/property';
+import { getBoroughConfig } from '@/lib/borough';
 
 export function buildSystemPrompt(property: PropertyProfile): string {
+  const boroughContext = buildBoroughContext(property.localAuthority);
+
   return `${ROLE_AND_DISCLAIMERS}
 
 ${buildPropertyContext(property)}
-
+${boroughContext}
 ${PLANNING_KNOWLEDGE_FRAMEWORK}
 
 ${RESPONSE_FORMAT_INSTRUCTIONS}`;
@@ -62,6 +65,79 @@ function buildPropertyContext(p: PropertyProfile): string {
     const latest = p.transactions[0];
     lines.push(`- Last sold: £${latest.price.toLocaleString()} on ${latest.date}`);
     lines.push(`- Total recorded transactions: ${p.transactions.length}`);
+  }
+
+  if (p.brownfieldSites && p.brownfieldSites.length > 0) {
+    lines.push(`\n### Nearby Brownfield Sites (within ~500m)`);
+    lines.push(`WARNING: ${p.brownfieldSites.length} brownfield site(s) registered nearby — future development is planned or possible.`);
+    for (const site of p.brownfieldSites.slice(0, 3)) {
+      const parts = [`${site.name} (${site.distance}m away)`];
+      if (site.minDwellings) parts.push(`${site.minDwellings}+ dwellings planned`);
+      if (site.planningStatus) parts.push(`status: ${site.planningStatus}`);
+      lines.push(`- ${parts.join(' — ')}`);
+    }
+  }
+
+  if (p.nearbySchools && p.nearbySchools.length > 0) {
+    lines.push(`\n### Nearby Schools`);
+    for (const school of p.nearbySchools.slice(0, 5)) {
+      const parts = [`${school.name} (${school.phase}, ${school.distance}m)`];
+      if (school.ofstedRating) parts.push(`Ofsted: ${school.ofstedRating}`);
+      if (school.ageRange) parts.push(`ages ${school.ageRange}`);
+      lines.push(`- ${parts.join(' — ')}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function buildBoroughContext(localAuthority: string): string {
+  const config = getBoroughConfig(localAuthority);
+  if (!config) return '';
+
+  const lines = [
+    `\n## LOCAL AUTHORITY CONTEXT — ${config.name}`,
+    `(Borough-specific policies that override or supplement national PD guidance)`,
+  ];
+
+  // CIL rates
+  lines.push(`\n### CIL Rates (${config.name})`);
+  lines.push(`- Residential: £${config.cilRateResidential}/m² (applies to extensions over 100m² GIA)`);
+  lines.push(`- Other development: £${config.cilRateOther}/m²`);
+  lines.push(`- Mayoral CIL: £${config.mayoralCilRate}/m² (in addition to borough CIL)`);
+
+  // Local plan policies
+  if (config.localPlanPolicies.length > 0) {
+    lines.push(`\n### Key Local Plan Policies`);
+    for (const policy of config.localPlanPolicies) {
+      lines.push(`- **${policy.ref} — ${policy.title}**: ${policy.summary}`);
+    }
+  }
+
+  // Article 4 directions
+  if (config.article4Directions.length > 0) {
+    lines.push(`\n### Borough-wide Article 4 Directions`);
+    for (const a4 of config.article4Directions) {
+      lines.push(`- **${a4.area}**: ${a4.rightsRemoved}`);
+    }
+  }
+
+  // PD notes
+  if (config.pdNotes.length > 0) {
+    lines.push(`\n### Important Notes for ${config.name}`);
+    for (const note of config.pdNotes) {
+      lines.push(`- ${note}`);
+    }
+  }
+
+  // Contact info
+  lines.push(`\n### Planning Contact`);
+  lines.push(`- Planning portal: ${config.planningPortalUrl}`);
+  if (config.planningContact.email) {
+    lines.push(`- Email: ${config.planningContact.email}`);
+  }
+  if (config.planningContact.phone) {
+    lines.push(`- Phone: ${config.planningContact.phone}`);
   }
 
   return lines.join('\n');

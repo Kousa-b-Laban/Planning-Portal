@@ -50,41 +50,51 @@ export async function searchAddressesByPostcodeOS(
 ): Promise<AddressResult[]> {
   const key = getApiKey();
   const encoded = encodeURIComponent(postcode.trim());
-  const res = await fetch(
-    `${BASE_URL}/postcode?postcode=${encoded}&key=${key}&dataset=DPA&maxresults=100`,
-    {
-      next: { revalidate: 60 * 60 * 24 }, // Cache 24 hours
-    }
-  );
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      throw new Error('OS Places API key is invalid — check OS_PLACES_API_KEY');
-    }
-    throw new Error(`OS Places API returned status ${res.status}`);
-  }
-
-  const data = await res.json();
-  if (!data.results || data.results.length === 0) return [];
-
-  // Deduplicate by UPRN
   const byUprn = new Map<string, AddressResult>();
-  for (const result of data.results) {
-    const dpa = result.DPA;
-    if (!dpa) continue;
+  const pageSize = 100;
+  let offset = 0;
 
-    const uprn = dpa.UPRN;
-    if (byUprn.has(uprn)) continue;
+  // Paginate through all results — OS Places caps at 100 per request,
+  // but London postcodes can have 200+ addresses (e.g. blocks of flats)
+  while (true) {
+    const res = await fetch(
+      `${BASE_URL}/postcode?postcode=${encoded}&key=${key}&dataset=DPA&maxresults=${pageSize}&offset=${offset}`,
+      {
+        next: { revalidate: 60 * 60 * 24 }, // Cache 24 hours
+      }
+    );
 
-    byUprn.set(uprn, {
-      uprn,
-      address: dpa.ADDRESS || '',
-      postcode: dpa.POSTCODE || postcode.trim(),
-      propertyType: classifyProperty(dpa.CLASSIFICATION_CODE || ''),
-      builtForm: dpa.CLASSIFICATION_CODE_DESCRIPTION || '',
-      latitude: dpa.LAT || 0,
-      longitude: dpa.LNG || 0,
-    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('OS Places API key is invalid — check OS_PLACES_API_KEY');
+      }
+      throw new Error(`OS Places API returned status ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) break;
+
+    for (const result of data.results) {
+      const dpa = result.DPA;
+      if (!dpa) continue;
+
+      const uprn = dpa.UPRN;
+      if (byUprn.has(uprn)) continue;
+
+      byUprn.set(uprn, {
+        uprn,
+        address: dpa.ADDRESS || '',
+        postcode: dpa.POSTCODE || postcode.trim(),
+        propertyType: classifyProperty(dpa.CLASSIFICATION_CODE || ''),
+        builtForm: dpa.CLASSIFICATION_CODE_DESCRIPTION || '',
+        latitude: dpa.LAT || 0,
+        longitude: dpa.LNG || 0,
+      });
+    }
+
+    const totalResults = data.header?.totalresults ?? 0;
+    offset += pageSize;
+    if (offset >= totalResults) break;
   }
 
   return Array.from(byUprn.values()).sort((a, b) =>

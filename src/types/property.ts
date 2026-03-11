@@ -114,6 +114,66 @@ export interface NearbyPlanningApp {
   authority: string;
 }
 
+export interface NearestStation {
+  name: string;
+  distance: number; // metres
+  lines: string[]; // e.g. ['Victoria', 'District']
+  modes: string[]; // e.g. ['tube', 'bus']
+}
+
+export interface TransportData {
+  nearestStations: NearestStation[];
+}
+
+export interface CrimeSummary {
+  totalCrimes: number;
+  period: string; // e.g. '2025-12'
+  categories: { category: string; count: number }[];
+}
+
+export interface BroadbandData {
+  averageDownload: number | null; // Mbps
+  averageUpload: number | null;
+  superfast: number | null; // % of premises with ≥30 Mbps
+  ultrafast: number | null; // % of premises with ≥300 Mbps
+  source: string;
+}
+
+export interface BoroughInfo {
+  name: string;
+  planningPortalUrl: string;
+  cilRateResidential: number;
+  mayoralCilRate: number;
+  conservationAreaCount: number;
+  article4Count: number;
+  planningContact: {
+    phone?: string;
+    email?: string;
+    url: string;
+  };
+}
+
+export interface BrownfieldSite {
+  name: string;
+  address: string;
+  hectares: number | null;
+  minDwellings: number | null; // Minimum net dwellings planned
+  planningStatus: string; // e.g. 'permissioned', 'not permissioned', 'pending decision'
+  lastUpdated: string;
+  distance: number; // metres from property
+  organisation: string;
+}
+
+export interface NearbySchool {
+  name: string;
+  phase: string; // Primary, Secondary, Sixth Form, All-through, Special, Nursery
+  type: string; // Academy, Free School, Community School, etc.
+  ofstedRating: string | null; // Outstanding, Good, Requires Improvement, Inadequate
+  ageRange: string | null; // e.g. '3-11', '11-18'
+  distance: number; // metres from property
+  urn: string; // Unique Reference Number
+}
+
 export interface PropertyProfile {
   address: string;
   postcode: string;
@@ -127,6 +187,12 @@ export interface PropertyProfile {
   planningConstraints: PlanningConstraints | null;
   nearbyPlanningApps: NearbyPlanningApp[];
   magicDesignations: MagicDesignations | null;
+  transport: TransportData | null;
+  crime: CrimeSummary | null;
+  broadband: BroadbandData | null;
+  borough: BoroughInfo | null;
+  brownfieldSites: BrownfieldSite[];
+  nearbySchools: NearbySchool[];
 }
 
 export interface MagicDesignations {
